@@ -18,7 +18,7 @@ func main() {
 	pool := goredis.NewPool(c)
 	rs := redsync.New(pool)
 
-	w := redislock.NewWork(rs, "lock", time.Minute, redislock.OnlyOne(func(ctx context.Context, lost <-chan struct{}) {
+	w := redislock.NewWork(rs, "lock", time.Minute, redislock.OnlyOne(func(ctx context.Context) {
 		fmt.Println("执行")
 	}))
 
