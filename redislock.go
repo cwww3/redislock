@@ -1,6 +1,7 @@
 package redislock
 
 import (
+	"context"
 	"time"
 
 	"github.com/go-redsync/redsync/v4"
@@ -24,14 +25,15 @@ func NewWork(rs *redsync.Redsync, name string, ttl time.Duration, action Action)
 	}
 }
 
-func (w *Worker) Run(stop chan struct{}) {
+func (w *Worker) Run(ctx context.Context) {
 	m := w.newLock(w.name, w.ttl)
-	lost, err := m.Acquire(stop)
-	defer m.Release()
+	lost, err := m.Acquire(ctx)
 	if err != nil {
 		return
 	}
-	w.action.Do(stop, lost)
+
+	defer m.Release()
+	w.action.Do(ctx, lost)
 }
 
 // newLock returns the Lock which can be used to Acquire or Release the lock

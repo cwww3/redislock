@@ -1,6 +1,7 @@
 package redislock
 
 import (
+	"context"
 	"time"
 
 	"github.com/go-redsync/redsync/v4"
@@ -17,7 +18,7 @@ type Lock struct {
 // Acquire attempts to acquire the lock and blocks while doing so
 // Providing a non-nil stop channel can be used to abort the acquire attempt
 // Returns lost channel that is closed if the lock is lost or an error
-func (lock *Lock) Acquire(stop <-chan struct{}) (<-chan struct{}, error) {
+func (lock *Lock) Acquire(ctx context.Context) (<-chan struct{}, error) {
 	for {
 		lost, err := lock.tryAcquire()
 		if err == nil {
@@ -25,9 +26,9 @@ func (lock *Lock) Acquire(stop <-chan struct{}) (<-chan struct{}, error) {
 		}
 
 		select {
-		case <-stop:
+		case <-ctx.Done():
 			{
-				return nil, nil
+				return nil, ctx.Err()
 			}
 		case <-time.After(lock.ttl / 3): //nolint
 			{
@@ -40,7 +41,7 @@ func (lock *Lock) Acquire(stop <-chan struct{}) (<-chan struct{}, error) {
 // Release releases the lock
 func (lock *Lock) Release() {
 	close(lock.extend)
-	lock.mutex.Unlock() //nolint
+	_, _ = lock.mutex.Unlock() //nolint
 }
 
 func (lock *Lock) tryAcquire() (<-chan struct{}, error) {
