@@ -49,6 +49,7 @@ func (w *Worker) LoopRun(ctx context.Context) {
 			defer m.Release()
 			w.action.Do(ctx, lost)
 		}()
+		time.Sleep(w.ttl / 3)
 	}
 }
 
